@@ -66,7 +66,7 @@ const API = "https://kivsoomahinmcbyxhhzt.supabase.co/functions/v1/api";
 const BASE = location.origin + location.pathname.replace(/hr\.html$/, "");
 const $ = id => document.getElementById(id);
 let pass = "";
-const fromLink = new URLSearchParams(location.hash.slice(1)).get("key");
+const fromLink = new URLSearchParams(location.hash.slice(1)).get("key") || new URLSearchParams(location.search).get("key");
 if (fromLink) { pass = fromLink; history.replaceState(null, "", location.pathname); }
 try { pass = pass || localStorage.getItem("hrpass") || ""; } catch (e) {}
 const call = (route, body) => fetch(`${API}/${route}`, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({passcode: pass, ...body})});
@@ -93,7 +93,7 @@ async function login() {
   if (await list()) {
     try { localStorage.setItem("hrpass", pass); } catch (e) {}
     $("login").classList.add("hidden"); $("app").classList.remove("hidden");
-  } else { $("login-err").textContent = "Wrong passcode."; }
+  } else { $("login-err").textContent = pass ? "This passcode didn't work. Use the personal HR link from Susan, or try again." : "Please open your personal HR link from Susan (it signs you in automatically), or type the passcode."; }
 }
 $("b-login").onclick = login;
 $("pass").addEventListener("keydown", e => e.key === "Enter" && login());
