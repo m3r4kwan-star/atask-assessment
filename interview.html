@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interview Form · ATASK</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#14181f;--muted:#5b6472;--line:#e3e6eb;--accent:#b4232c;--accent-ink:#fff;--conf:#fff8e6;--conf-line:#f0d9a8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:820px;margin:0 auto;padding:24px 16px 80px}
+header{margin-bottom:18px}
+.brand{font-weight:700;letter-spacing:.02em}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:16px}
+.card.conf{background:var(--conf);border-color:var(--conf-line)}
+h1{font-size:23px;margin:0 0 8px}
+h2{font-size:18px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 12px}
+p{margin:0 0 10px}
+.f{margin:14px 0 0}
+.f>label{display:block;font-weight:600;font-size:15px;margin-bottom:4px}
+.f .hint{font-weight:400;color:var(--muted);font-size:13px}
+input[type=text],input[type=email],input[type=tel],input[type=date],input[type=number],textarea,select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+textarea{resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.choices{display:flex;flex-wrap:wrap;gap:8px}
+.choices label{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;font-weight:400;background:#fff}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:12px 22px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+.req{color:var(--accent)}
+.err{color:var(--accent);font-size:14px;margin-top:8px}
+canvas.sig{display:block;width:100%;height:170px;border:1px dashed #9aa1ac;border-radius:8px;background:#fff;touch-action:none;cursor:crosshair}
+.row-sig{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+button.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);padding:6px 14px;font-weight:500}
+.hidden{display:none!important}
+@media (max-width:620px){.grid{grid-template-columns:1fr}.card{padding:16px}}
+</style>
+</head>
+<body>
+<main>
+  <header><div class="brand">ATASK<small>Interview form and prospective human resources data</small></div></header>
+  <div id="gate" class="card"><p>Loading…</p></div>
+  <form id="form" class="hidden" novalidate>
+    <div class="card">
+      <h1>Interview Form</h1>
+      <p>Please fill out this form as completely as possible. The data you provide is strictly confidential.</p>
+      <p>Accurate information is essential. Discrepancies may lead to cancellation of the application, termination, or legal action as permitted by law. You must be willing to provide copies of your degree and other documents you state that you have.</p>
+      <p class="sub">Fields marked <span class="req">*</span> are required. About 20–30 minutes. Your answers are not saved until you press Submit.</p>
+    </div>
+    <div id="sections"></div>
+    <div class="card">
+      <h2>Declaration and signature</h2>
+      <div class="f"><label class="choices" style="border:0;padding:0"><input type="checkbox" id="declare"> I made this statement honestly and in accordance with the truth.</label></div>
+      <div class="grid">
+        <div class="f"><label for="sig_name">Full name <span class="req">*</span></label><input id="sig_name" type="text" maxlength="120"></div>
+        <div class="f"><label for="sig_place">Place <span class="req">*</span></label><input id="sig_place" type="text" maxlength="80" placeholder="e.g. Jakarta"></div>
+      </div>
+      <div class="f"><label>Signature <span class="req">*</span> <span class="hint">— sign inside the box with your mouse, trackpad or finger</span></label>
+        <canvas id="sig" class="sig"></canvas>
+        <div class="row-sig"><span class="hint" id="sig_date"></span><button type="button" class="ghost" id="sig_clear">Clear</button></div></div>
+      <div style="margin-top:16px"><button id="submit" type="submit" disabled>Submit</button></div>
+      <div id="err" class="err"></div>
+    </div>
+  </form>
+  <div id="done" class="card hidden"><h1>Thank you</h1><p>Your form has been submitted. Our HR team will contact you about the next step.</p></div>
+</main>
+<script>
+(() => {
+const API = "https://kivsoomahinmcbyxhhzt.supabase.co/functions/v1/api";
+const slug = (new URLSearchParams(location.search).get("c") || "").toLowerCase();
+const $ = id => document.getElementById(id);
+
+// t: text | email | tel | date | num | area | choice | multi ; r = required ; half = half-width
+const SECTIONS = [
+ {id: "A", title: "A. Personal information", fields: [
+  ["full_name", "Full name", "t", 1], ["gender", "Gender", "choice", 1, ["Male", "Female"]],
+  ["birth_place", "Place of birth", "t", 1, null, 1], ["birth_date", "Date of birth", "date", 1, null, 1],
+  ["domicile_address", "Domicile address (where you live now)", "area", 1],
+  ["phone", "Telephone number", "tel", 0, null, 1], ["whatsapp", "Mobile / WhatsApp", "tel", 1, null, 1],
+  ["email", "Email address", "email", 1], ["fixed_address", "Permanent address (as on ID card)", "area", 0],
+  ["ethnic", "Ethnicity", "t", 0, null, 1], ["religion", "Religion", "t", 0, null, 1],
+  ["marital_status", "Marital status", "choice", 1, ["Single", "Married", "Engaged", "Other"]],
+  ["id_number", "ID number (KTP / passport / driver's licence)", "t", 1],
+  ["height_cm", "Height (cm)", "num", 0, null, 1], ["weight_kg", "Weight (kg)", "num", 0, null, 1],
+  ["blood_type", "Blood type", "choice", 0, ["O", "A", "B", "AB"]], ["color_blind", "Colour blind", "choice", 0, ["Yes", "No"]],
+  ["hobby", "Hobby", "t", 0], ["illnesses", "Illnesses you often have, and their effects", "area", 0],
+  ["accidents", "Accidents you have had, and their effects", "area", 0]]},
+ {id: "B", title: "B. Family information", fields: [
+  ["father", "Father: full name, age, address, telephone, religion, last education", "area", 0],
+  ["mother", "Mother: full name, age, address, telephone, religion, last education", "area", 0],
+  ["siblings", "Siblings (including you): one per line — full name, age, last education, address, job", "area", 0],
+  ["spouse", "If married: husband/wife — full name, age, last education, job, working period", "area", 0],
+  ["children", "If you have children: one per line — full name, age, last education, job", "area", 0],
+  ["dependents", "Who are you responsible for financially?", "t", 0],
+  ["residence", "Residence", "choice", 0, ["Self-owned", "Parents", "Rent", "Other"]],
+  ["rent_cost", "If you rent: total monthly or yearly cost", "t", 0]]},
+ {id: "C", title: "C. Education", fields: [
+  ["formal_education", "Formal education: one per line — level, school name, major, city, graduation year, GPA (from university down to elementary)", "area", 1],
+  ["why_major", "What made you choose the major of your last education?", "area", 0],
+  ["best_subject", "In which subject did you feel most satisfied? Please explain.", "area", 0],
+  ["worst_subject", "In which subject did you feel least satisfied? Please explain.", "area", 0],
+  ["achievements_edu", "Educational achievements (with year)", "area", 0],
+  ["languages_active", "Foreign languages — active", "t", 1, null, 1], ["languages_passive", "Foreign languages — passive", "t", 0, null, 1],
+  ["training", "Non-formal education / training: one per line — training, organiser, city, period", "area", 0],
+  ["organizations", "Organisation experience: one per line — organisation, institution, city, period", "area", 0]]},
+ {id: "D", title: "D. Working experience", fields: [
+  ["work_history", "Working experience, most recent first: one per line — company & city, last position, from (month/year) to (month/year)", "area", 1],
+  ["achievements_work", "Achievements at your last company", "area", 0]]},
+ {id: "E", title: "E. Others", fields: [
+  ["prefer_place", "You prefer to work", "choice", 0, ["Field / outdoor", "Indoor (behind a desk)", "New environment, directly in the field"]],
+  ["prefer_place_reason", "Reason", "t", 0],
+  ["prefer_style", "You prefer companies where you", "choice", 0, ["Work independently without a group", "Work independently within a group", "Interact often with people or external parties"]],
+  ["prefer_style_reason", "Reason", "t", 0],
+  ["job_types", "Types of jobs you prefer", "t", 0],
+  ["staff_known", "Staff you know at ATASK, and your relation", "t", 0],
+  ["know_atask", "What do you know about ATASK?", "area", 0],
+  ["why_atask", "What makes you interested in working at ATASK? If you join, what can you contribute?", "area", 1],
+  ["source", "How did you hear about this position?", "choice", 1, ["Advertising / job post", "From ATASK staff", "Self-applied", "Recruiter / HR contacted me"]],
+  ["plans_3y", "Your plans for the next 3 years", "area", 0],
+  ["willing", "Are you willing to", "multi", 0, ["Undergo the company's probation period", "Arrange your own accommodation", "Arrange your own transportation"]],
+  ["psych_tests", "Psychological tests you have taken: one per line — month & year, institution, purpose", "area", 0],
+  ["work_interest", "If accepted, what type of work are you interested in?", "t", 0],
+  ["start_date", "If accepted, when can you start working?", "t", 1],
+  ["reference", "Former supervisor who can give a reference: name, address, telephone", "area", 0]]},
+ {id: "S", conf: true, title: "F. Salary and benefits (last page)", sub: "Confidential. These answers are seen only by ATASK management, not by the HR team or the client.", fields: [
+  ["last_salary", "Last company: gross salary per month", "t", 1, null, 1], ["tax_by", "Last company: tax paid by", "choice", 0, ["Company", "Employee"]],
+  ["last_bonus", "Last company: bonus", "t", 0, null, 1], ["last_take_home", "Last company: net salary (take-home pay)", "t", 1, null, 1],
+  ["last_facilities", "Last company: facilities / benefits", "area", 0],
+  ["accept_standard", "Are you willing to accept the salary and facilities according to company standards and your achievements?", "choice", 1, ["Yes", "No"]],
+  ["expected_take_home", "If not: expected net salary (take-home pay)", "t", 0, null, 1], ["expected_facilities", "Expected facilities", "t", 0, null, 1]]}
+];
+
+function field([k, label, type, req, opts, half]) {
+  const w = document.createElement("div"); w.className = "f" + (half ? " half" : "");
+  const id = "f_" + k, star = req ? ' <span class="req">*</span>' : "";
+  if (type === "choice" || type === "multi") {
+    w.innerHTML = `<label>${label}${star}</label><div class="choices">` + opts.map(o =>
+      `<label><input type="${type === "multi" ? "checkbox" : "radio"}" name="${id}" value="${o}"> ${o}</label>`).join("") + "</div>";
+  } else if (type === "area") {
+    w.innerHTML = `<label for="${id}">${label}${star}</label><textarea id="${id}" rows="3" maxlength="3000"></textarea>`;
+  } else {
+    const t = {t: "text", num: "number"}[type] || type;
+    w.innerHTML = `<label for="${id}">${label}${star}</label><input id="${id}" type="${t}" maxlength="300">`;
+  }
+  w.dataset.key = k; w.dataset.type = type; w.dataset.req = req ? "1" : "";
+  return w;
+}
+function render() {
+  SECTIONS.forEach(s => {
+    const c = document.createElement("div"); c.className = "card" + (s.conf ? " conf" : "");
+    c.innerHTML = `<h2>${s.title}</h2>` + (s.sub ? `<p class="sub">${s.sub}</p>` : "");
+    let grid = null;
+    s.fields.forEach(f => {
+      const el = field(f);
+      if (f[5]) { if (!grid) { grid = document.createElement("div"); grid.className = "grid"; c.appendChild(grid); } grid.appendChild(el); }
+      else { grid = null; c.appendChild(el); }
+    });
+    c.dataset.section = s.id; $("sections").appendChild(c);
+  });
+}
+function value(w) {
+  const k = w.dataset.key, t = w.dataset.type;
+  if (t === "choice") return (document.querySelector(`input[name="f_${k}"]:checked`) || {}).value || "";
+  if (t === "multi") return [...document.querySelectorAll(`input[name="f_${k}"]:checked`)].map(x => x.value);
+  return $("f_" + k).value.trim();
+}
+function collect() {
+  const data = {}, salary = {}, missing = [];
+  document.querySelectorAll("[data-section]").forEach(c => {
+    const target = c.dataset.section === "S" ? salary : (data[c.dataset.section] = {});
+    c.querySelectorAll(".f[data-key]").forEach(w => {
+      const v = value(w); target[w.dataset.key] = v;
+      if (w.dataset.req && (Array.isArray(v) ? !v.length : !v)) missing.push(w.querySelector("label").textContent.replace(" *", ""));
+    });
+  });
+  return {data, salary, missing};
+}
+
+async function start() {
+  if (!slug) { $("gate").innerHTML = "<p>This link is missing the candidate code. Please use the link from our HR team.</p>"; return; }
+  const r = await fetch(API + "/interview-check", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({candidate: slug})}).catch(() => null);
+  if (!r) { $("gate").innerHTML = "<p>Could not connect. Please check your internet connection and reload.</p>"; return; }
+  if (!r.ok) { const e = await r.json().catch(() => ({})); $("gate").innerHTML = `<p>${e.error || "This link is not valid."}</p>`; return; }
+  render(); $("gate").classList.add("hidden"); $("form").classList.remove("hidden"); sizeSig();
+}
+// signature pad
+const sig = $("sig"); let drawn = false, drawing = false, last = null;
+function sizeSig() { const r = sig.getBoundingClientRect(), d = devicePixelRatio || 1; sig.width = r.width * d; sig.height = r.height * d;
+  const c = sig.getContext("2d"); c.scale(d, d); c.lineWidth = 2.2; c.lineCap = "round"; c.lineJoin = "round"; c.strokeStyle = "#0b1f4d"; drawn = false; check(); }
+const pt = e => { const r = sig.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+sig.addEventListener("pointerdown", e => { drawing = true; last = pt(e); sig.setPointerCapture(e.pointerId); });
+sig.addEventListener("pointermove", e => { if (!drawing) return; const p = pt(e), c = sig.getContext("2d");
+  c.beginPath(); c.moveTo(...last); c.lineTo(...p); c.stroke(); last = p; if (!drawn) { drawn = true; check(); } });
+["pointerup", "pointercancel", "pointerleave"].forEach(k => sig.addEventListener(k, () => drawing = false));
+$("sig_clear").onclick = sizeSig;
+const today = new Date().toLocaleDateString("en-GB", {day: "numeric", month: "long", year: "numeric"});
+$("sig_date").textContent = "Date: " + today;
+function check() { $("submit").disabled = !($("declare").checked && drawn && $("sig_name").value.trim() && $("sig_place").value.trim()); }
+["sig_name", "sig_place"].forEach(id => $(id).addEventListener("input", check));
+$("declare").onchange = check;
+$("form").onsubmit = async e => {
+  e.preventDefault(); $("err").textContent = "";
+  const {data, salary, missing} = collect();
+  if (!drawn) missing.push("Signature");
+  if (missing.length) { $("err").textContent = "Please complete: " + missing.slice(0, 6).join("; ") + (missing.length > 6 ? "…" : ""); return; }
+  $("submit").disabled = true; $("submit").textContent = "Submitting…";
+  const r = await fetch(API + "/interview", {method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({candidate: slug, data: {...data, SIG: {name: $("sig_name").value.trim(), place: $("sig_place").value.trim(), date: today,
+      image: sig.toDataURL("image/png")}}, salary})}).catch(() => null);
+  if (!r || !r.ok) { const er = r ? await r.json().catch(() => ({})) : {}; $("err").textContent = er.error || "Submit failed. Please try again."; $("submit").disabled = false; $("submit").textContent = "Submit"; return; }
+  $("form").classList.add("hidden"); $("done").classList.remove("hidden"); scrollTo(0, 0);
+};
+start();
+})();
+</script>
+</body>
+</html>

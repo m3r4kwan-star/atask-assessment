@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rails Assessment · ATASK</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#14181f;--muted:#5b6472;--line:#e3e6eb;--accent:#b4232c;--accent-ink:#fff;--ok:#1d7a46;--warn:#a15c00;--code-bg:#fbfbfc}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-user-select:none;user-select:none}
+main{max-width:860px;margin:0 auto;padding:24px 16px 64px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.brand{font-weight:700;letter-spacing:.02em}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px}
+h1{font-size:24px;margin:0 0 8px}
+h2{font-size:19px;margin:0 0 12px}
+p{margin:0 0 12px}
+ul.rules{margin:0 0 16px;padding-left:20px}
+ul.rules li{margin:4px 0}
+label{display:block;font-weight:600;margin:12px 0 4px}
+input[type=text],input[type=email]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;-webkit-user-select:text;user-select:text}
+.check{display:flex;gap:8px;align-items:flex-start;font-weight:400;margin-top:14px}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:11px 20px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.progress{color:var(--muted);font-size:14px}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:18px;padding:4px 10px;border-radius:999px;background:#eef0f3}
+.timer.low{background:#fde8e8;color:var(--accent)}
+.bar{height:4px;background:var(--line);border-radius:2px;margin:10px 0 18px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);transition:width 1s linear}
+canvas.code{display:block;width:100%;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);margin:4px 0 16px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;font-weight:400}
+.opt:hover{border-color:#b9bfc9}
+.opt.sel{border-color:var(--accent);box-shadow:0 0 0 2px #b4232c22}
+.opt b{min-width:22px}
+.cam{position:fixed;right:16px;bottom:16px;width:132px;border-radius:10px;border:2px solid #fff;box-shadow:0 2px 10px #0003;background:#000}
+.notice{background:#fff8e6;border:1px solid #f0d9a8;color:#5a4300;border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+.err{color:var(--accent);font-size:14px;margin-top:8px}
+video.rec{width:100%;max-height:300px;border-radius:8px;background:#000;margin:8px 0}
+textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;resize:vertical;-webkit-user-select:text;user-select:text}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.tools label{display:flex;gap:6px;align-items:center;font-weight:400;margin:0;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+.hidden{display:none!important}
+.small{font-size:13px;color:var(--muted)}
+@media (max-width:600px){.cam{width:96px}h1{font-size:21px}.card{padding:18px}}
+</style>
+</head>
+<body>
+<main>
+  <header><div class="brand">ATASK<small>Ruby on Rails assessment</small></div><div id="hdr" class="progress"></div></header>
+
+  <section id="s-intro" class="card">
+    <h1>Ruby on Rails assessment</h1>
+    <p>About 20 minutes. Please read the rules before you start.</p>
+    <ul class="rules">
+      <li><b>10 multiple-choice questions</b>, one at a time, <b>75 seconds each</b>. You cannot go back.</li>
+      <li>A short question about <b>the AI tools you use and why</b>.</li>
+      <li><b>1 short video answer</b>: you explain a piece of code out loud, in English, for up to 90 seconds.</li>
+      <li>Your <b>camera stays on</b> during the test, and we take occasional snapshots.</li>
+      <li>Stay on this tab. Leaving the tab or window is recorded.</li>
+      <li>Use a laptop or desktop with Chrome, Edge or Firefox, in a quiet place.</li>
+    </ul>
+    <p class="small">Assumptions for all questions: <span id="assume">Rails 7.1, Ruby 3.2, PostgreSQL.</span></p>
+    <label for="name">Full name</label><input id="name" type="text" autocomplete="name">
+    <label for="email">Email</label><input id="email" type="email" autocomplete="email">
+    <label class="check"><input id="agree" type="checkbox"> I agree that my camera, answers, timings and video are recorded for this hiring process, and I will do this test alone.</label>
+    <div class="row" style="margin-top:18px"><span class="small" id="linkinfo"></span><button id="b-start" disabled>Turn on camera and start</button></div>
+    <div id="intro-err" class="err"></div>
+  </section>
+
+  <section id="s-q" class="card hidden">
+    <div class="row"><span class="progress" id="q-prog"></span><span class="timer" id="q-timer">75</span></div>
+    <div class="bar"><i id="q-bar" style="width:100%"></i></div>
+    <h2 id="q-text"></h2>
+    <canvas class="code" id="q-code"></canvas>
+    <div id="q-opts"></div>
+    <div class="row" style="margin-top:12px"><span class="small">Answers lock when the timer ends.</span><button id="b-next" disabled>Next</button></div>
+  </section>
+
+  <section id="s-ai" class="card hidden">
+    <h2>Your AI tools</h2>
+    <p>Which AI tools do you use for coding? Select all that apply.</p>
+    <div id="ai-tools" class="tools"></div>
+    <label for="ai-other">Other (optional)</label><input id="ai-other" type="text" maxlength="80">
+    <label for="ai-why">Which one do you use most, and why do you prefer it? Give a concrete example from your Rails work. (3–5 sentences, in English)</label>
+    <textarea id="ai-why" rows="5" maxlength="1500"></textarea>
+    <div class="row" style="margin-top:14px"><span class="small" id="ai-count">0 / 1500</span><button id="b-ai" disabled>Continue to video</button></div>
+  </section>
+
+  <section id="s-v" class="card hidden">
+    <div class="row"><span class="progress">Video answer</span><span class="timer" id="v-timer">90</span></div>
+    <h2 id="v-prompt"></h2>
+    <canvas class="code" id="v-code"></canvas>
+    <div class="notice">Speak in English. You may take 30 seconds to read the code first. Recording stops automatically after 90 seconds. You have 2 attempts; the last one is kept.</div>
+    <video id="v-live" class="rec hidden" muted playsinline></video>
+    <video id="v-play" class="rec hidden" controls playsinline></video>
+    <div class="row">
+      <span class="small" id="v-status">Not recorded yet.</span>
+      <span><button class="ghost" id="b-rec">Start recording</button> <button id="b-submit" disabled>Submit</button></span>
+    </div>
+    <div id="v-err" class="err"></div>
+  </section>
+
+  <section id="s-done" class="card hidden">
+    <h1>Thank you</h1>
+    <p>Your answers and video have been submitted. Our HR team will contact you about the next step.</p>
+    <p class="small">You can close this tab.</p>
+  </section>
+</main>
+<video id="cam" class="cam hidden" muted playsinline autoplay></video>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const cand = (new URLSearchParams(location.search).get("c") || "").toLowerCase();
+let att = null, stream = null, qi = 0, chosen = null, tLeft = 0, tick = null, qStart = 0;
+let snapTimer = null, recorder = null, chunks = [], videoBlob = null, attemptsLeft = 2;
+const API = "https://kivsoomahinmcbyxhhzt.supabase.co/functions/v1/api";
+const post = (path, body, type = "application/json") => fetch(API + path.replace("/api", ""), {
+  method: "POST", headers: {"Content-Type": type, ...(att ? {"X-Attempt": att.attempt_id, "X-Token": att.token} : {})},
+  body: type === "application/json" ? JSON.stringify(body) : body
+});
+const ev = (kind, extra = {}) => att && post("/api/event", {kind, q: att.questions[qi]?.id, t: Date.now(), ...extra}).catch(() => {});
+
+$("linkinfo").textContent = cand ? "" : "This link is missing the candidate code. Please use the link from our HR team.";
+const ready = () => $("b-start").disabled = !(cand && $("name").value.trim() && /\S+@\S+\.\S+/.test($("email").value) && $("agree").checked);
+["name", "email", "agree"].forEach(id => $(id).addEventListener("input", ready));
+
+// code rendered to canvas so it cannot be selected or copied as text
+function drawCode(canvas, code) {
+  const lines = code.split("\n"), dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth || 800, fs = w < 520 ? 12 : 14, lh = fs * 1.55, pad = 14;
+  canvas.style.height = (lines.length * lh + pad * 2) + "px";
+  canvas.width = w * dpr; canvas.height = (lines.length * lh + pad * 2) * dpr;
+  const c = canvas.getContext("2d"); c.scale(dpr, dpr);
+  c.fillStyle = "#fbfbfc"; c.fillRect(0, 0, w, canvas.height);
+  c.font = `${fs}px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`; c.textBaseline = "top";
+  lines.forEach((ln, i) => { c.fillStyle = /^\s*#/.test(ln) ? "#6b7280" : "#14181f"; c.fillText(ln, pad, pad + i * lh); });
+}
+const md = s => s.replace(/[&<>]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[ch])).replace(/`([^`]+)`/g, "<code>$1</code>");
+
+$("b-start").onclick = async () => {
+  $("intro-err").textContent = "";
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video: {width: 640, height: 480}, audio: true});
+  } catch (e) { $("intro-err").textContent = "We need camera and microphone access to continue. Please allow them and try again."; return; }
+  const r = await post("/api/start", {candidate: cand, name: $("name").value.trim(), email: $("email").value.trim()});
+  if (!r.ok) { const e = await r.json().catch(() => ({})); $("intro-err").textContent = e.error || "Could not start. Please contact our HR team."; stream.getTracks().forEach(t => t.stop()); return; }
+  att = await r.json();
+  $("assume").textContent = att.assumptions;
+  $("cam").srcObject = new MediaStream(stream.getVideoTracks()); $("cam").classList.remove("hidden");
+  $("cam").addEventListener("loadeddata", () => snapshot(), {once: true}); snapTimer = setInterval(snapshot, 30000);
+  document.documentElement.requestFullscreen?.().catch(() => {});
+  $("s-intro").classList.add("hidden"); showQ();
+};
+
+function snapshot() {
+  const v = $("cam"); if (!v.videoWidth) return;
+  const c = document.createElement("canvas"); c.width = 320; c.height = 240;
+  c.getContext("2d").drawImage(v, 0, 0, 320, 240);
+  c.toBlob(b => b && post("/api/snapshot", b, "image/jpeg").catch(() => {}), "image/jpeg", .7);
+}
+
+function showQ() {
+  const q = att.questions[qi]; chosen = null; snapshot();
+  $("s-q").classList.remove("hidden");
+  $("q-prog").textContent = `Question ${qi + 1} of ${att.questions.length}`;
+  $("hdr").textContent = q.cat;
+  $("q-text").innerHTML = md(q.q);
+  drawCode($("q-code"), q.code);
+  $("q-opts").innerHTML = "";
+  q.opts.forEach((o, i) => {
+    const b = document.createElement("button"); b.className = "opt";
+    b.innerHTML = `<b>${"ABCD"[i]}</b><span>${md(o.text)}</span>`;
+    b.onclick = () => { ev("select", {choice: o.key, seconds: Math.round((performance.now() - qStart) / 100) / 10}); chosen = o.key; [...$("q-opts").children].forEach(x => x.classList.remove("sel")); b.classList.add("sel"); $("b-next").disabled = false; };
+    $("q-opts").appendChild(b);
+  });
+  $("b-next").disabled = true;
+  tLeft = att.seconds_per_question; qStart = performance.now(); render();
+  clearInterval(tick); tick = setInterval(() => { tLeft--; render(); if (tLeft <= 0) submitQ(true); }, 1000);
+}
+function render() {
+  $("q-timer").textContent = tLeft; $("q-timer").classList.toggle("low", tLeft <= 15);
+  $("q-bar").style.width = (100 * tLeft / att.seconds_per_question) + "%";
+}
+function submitQ(timeout = false) {
+  clearInterval(tick);
+  const q = att.questions[qi];
+  post("/api/answer", {q: q.id, answer: chosen, seconds: Math.round((performance.now() - qStart) / 100) / 10, timeout}).catch(() => {});
+  qi++;
+  if (qi < att.questions.length) showQ(); else showAI();
+}
+$("b-next").onclick = () => submitQ(false);
+
+const TOOLS = ["Claude / Claude Code", "Cursor", "GitHub Copilot", "ChatGPT / Codex", "Gemini", "Windsurf", "None"];
+TOOLS.forEach(t => { const l = document.createElement("label"); l.innerHTML = `<input type="checkbox" value="${t}"> ${t}`; $("ai-tools").appendChild(l); });
+const aiReady = () => { const n = $("ai-why").value.trim().length; $("ai-count").textContent = `${n} / 1500`;
+  $("b-ai").disabled = !((document.querySelectorAll("#ai-tools input:checked").length || $("ai-other").value.trim()) && n >= 80); };
+["ai-why", "ai-other"].forEach(id => $(id).addEventListener("input", aiReady)); $("ai-tools").addEventListener("change", aiReady);
+let aiStart = 0;
+function showAI() { $("s-q").classList.add("hidden"); $("s-ai").classList.remove("hidden"); $("hdr").textContent = ""; aiStart = performance.now(); snapshot(); }
+$("b-ai").onclick = () => {
+  ev("ai_tools", {tools: [...document.querySelectorAll("#ai-tools input:checked")].map(x => x.value), other: $("ai-other").value.trim(),
+    why: $("ai-why").value.trim(), seconds: Math.round((performance.now() - aiStart) / 1000)});
+  $("s-ai").classList.add("hidden"); showVideo();
+};
+
+function showVideo() {
+  $("s-q").classList.add("hidden"); $("s-v").classList.remove("hidden"); $("hdr").textContent = "";
+  $("v-prompt").innerHTML = md(att.video.prompt); drawCode($("v-code"), att.video.code);
+  $("v-timer").textContent = att.video_seconds;
+}
+$("b-rec").onclick = () => {
+  if (recorder && recorder.state === "recording") { recorder.stop(); return; }
+  if (attemptsLeft <= 0) return;
+  attemptsLeft--; chunks = [];
+  const mime = ["video/webm;codecs=vp9,opus", "video/webm", "video/mp4"].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+  try { recorder = new MediaRecorder(stream, mime ? {mimeType: mime} : {}); } catch (e) { $("v-err").textContent = "Your browser cannot record video. Please use Chrome, Edge or Firefox."; return; }
+  recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+  recorder.onstop = () => {
+    clearInterval(tick);
+    videoBlob = new Blob(chunks, {type: recorder.mimeType});
+    $("v-live").classList.add("hidden"); $("v-play").src = URL.createObjectURL(videoBlob); $("v-play").classList.remove("hidden");
+    $("v-status").textContent = attemptsLeft ? "Recorded. You can submit, or record once more." : "Recorded. This is your final attempt.";
+    $("b-rec").textContent = "Record again"; $("b-rec").disabled = attemptsLeft <= 0; $("b-submit").disabled = false;
+    ev("video_recorded", {bytes: videoBlob.size});
+  };
+  $("v-live").srcObject = stream; $("v-live").classList.remove("hidden"); $("v-play").classList.add("hidden"); $("v-live").play();
+  recorder.start(1000); $("b-rec").textContent = "Stop"; $("b-submit").disabled = true; $("v-status").textContent = "Recording...";
+  let left = att.video_seconds; $("v-timer").textContent = left;
+  clearInterval(tick); tick = setInterval(() => { left--; $("v-timer").textContent = left; if (left <= 0) recorder.stop(); }, 1000);
+};
+$("b-submit").onclick = async () => {
+  $("b-submit").disabled = true; $("b-rec").disabled = true; $("v-status").textContent = "Uploading...";
+  const u = await post("/api/video-url", {}).then(x => x.ok ? x.json() : null).catch(() => null);
+  const r = u && await fetch(u.url, {method: "PUT", headers: {"Content-Type": videoBlob.type || "video/webm", "x-upsert": "true"}, body: videoBlob}).catch(() => null);
+  if (!r || !r.ok) { $("v-err").textContent = "Upload failed. Please check your connection and press Submit again."; $("b-submit").disabled = false; return; }
+  await post("/api/finish", {screen: `${screen.width}x${screen.height}`}).catch(() => {});
+  clearInterval(snapTimer); stream.getTracks().forEach(t => t.stop()); $("cam").classList.add("hidden");
+  document.fullscreenElement && document.exitFullscreen().catch(() => {});
+  $("s-v").classList.add("hidden"); $("s-done").classList.remove("hidden");
+};
+
+// integrity signals
+document.addEventListener("visibilitychange", () => ev(document.hidden ? "tab_hidden" : "tab_visible"));
+window.addEventListener("blur", () => ev("window_blur"));
+window.addEventListener("focus", () => ev("window_focus"));
+document.addEventListener("fullscreenchange", () => ev(document.fullscreenElement ? "fullscreen_on" : "fullscreen_off"));
+["copy", "cut", "paste", "contextmenu"].forEach(k => document.addEventListener(k, e => { if (att) { e.preventDefault(); ev(k); } }));
+document.addEventListener("keydown", e => { if (att && (e.metaKey || e.ctrlKey) && /^[cvxpsu]$/i.test(e.key)) { e.preventDefault(); ev("shortcut", {key: e.key}); } });
+window.addEventListener("beforeunload", e => { if (att && !$("s-done").offsetParent) { ev("leave_attempt"); e.preventDefault(); } });
+})();
+</script>
+</body>
+</html>
