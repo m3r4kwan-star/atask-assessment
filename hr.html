@@ -66,7 +66,9 @@ const API = "https://kivsoomahinmcbyxhhzt.supabase.co/functions/v1/api";
 const BASE = location.origin + location.pathname.replace(/hr\.html$/, "");
 const $ = id => document.getElementById(id);
 let pass = "";
-try { pass = sessionStorage.getItem("hrpass") || ""; } catch (e) {}
+const fromLink = new URLSearchParams(location.hash.slice(1)).get("key");
+if (fromLink) { pass = fromLink; history.replaceState(null, "", location.pathname); }
+try { pass = pass || localStorage.getItem("hrpass") || ""; } catch (e) {}
 const call = (route, body) => fetch(`${API}/${route}`, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({passcode: pass, ...body})});
 const links = slug => ({form: `${BASE}interview.html?c=${slug}`, test: `${BASE}?c=${slug}`});
 
@@ -89,7 +91,7 @@ async function list() {
 async function login() {
   pass = $("pass").value || pass;
   if (await list()) {
-    try { sessionStorage.setItem("hrpass", pass); } catch (e) {}
+    try { localStorage.setItem("hrpass", pass); } catch (e) {}
     $("login").classList.add("hidden"); $("app").classList.remove("hidden");
   } else { $("login-err").textContent = "Wrong passcode."; }
 }
